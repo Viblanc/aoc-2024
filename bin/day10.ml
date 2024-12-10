@@ -44,7 +44,7 @@ let part_1 =
   |> List.map Positions.cardinal
   |> List.fold_left ( + ) 0
 
-let rec calculate_rating grid seen pos =
+let rec calculate_rating grid pos =
   let increase_by_one height pos =
     match Grid.find_opt pos grid with Some h -> h = height + 1 | _ -> false
   in
@@ -56,13 +56,10 @@ let rec calculate_rating grid seen pos =
     in
     match neighbors with
     | [] -> 0
-    | _ ->
-        let seen = Positions.add pos seen in
-        List.(fold_left ( + ) 0 (map (calculate_rating grid seen) neighbors))
+    | _ -> List.(fold_left ( + ) 0 (map (calculate_rating grid) neighbors))
 
 let part_2 =
-  List.map (calculate_rating grid Positions.empty) trailheads
-  |> List.fold_left ( + ) 0
+  List.map (calculate_rating grid) trailheads |> List.fold_left ( + ) 0
 
 let _ =
   Printf.printf "Solution for part 1 : %d\n" part_1;
