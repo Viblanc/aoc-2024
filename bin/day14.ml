@@ -15,47 +15,50 @@ let move_robots ~width ~height ~seconds robots =
   in
   List.map move_robot robots
 
+let quadrants w h robots =
+  let f1 (x, y) = x < w / 2 && y < h / 2 in
+  let f2 (x, y) = x > w / 2 && y < h / 2 in
+  let f3 (x, y) = x < w / 2 && y > h / 2 in
+  let f4 (x, y) = x > w / 2 && y > h / 2 in
+  List.fold_left
+    (fun (q1, q2, q3, q4) (p, _) ->
+      match (f1 p, f2 p, f3 p, f4 p) with
+      | true, _, _, _ -> (p :: q1, q2, q3, q4)
+      | _, true, _, _ -> (q1, p :: q2, q3, q4)
+      | _, _, true, _ -> (q1, q2, p :: q3, q4)
+      | _, _, _, true -> (q1, q2, q3, p :: q4)
+      | _ -> (q1, q2, q3, q4))
+    ([], [], [], []) robots
+
 let safety_factor w h robots =
-  let quadrants =
-    [
-      List.filter (fun ((x, y), _) -> x < w / 2 && y < h / 2) robots;
-      List.filter (fun ((x, y), _) -> x > w / 2 && y < h / 2) robots;
-      List.filter (fun ((x, y), _) -> x < w / 2 && y > h / 2) robots;
-      List.filter (fun ((x, y), _) -> x > w / 2 && y > h / 2) robots;
-    ]
-  in
-  List.(fold_left ( * ) 1 (List.map List.length quadrants))
+  let q1, q2, q3, q4 = quadrants w h robots in
+  List.(fold_left ( * ) 1 (List.map List.length [ q1; q2; q3; q4 ]))
 
 let part_1 =
   let w, h = (101, 103) in
   let robots = move_robots ~width:w ~height:h ~seconds:100 robots in
   safety_factor w h robots
 
-(* I just made a wild guess that robots wouldn't overlap to picture a Christmas tree *)
-let is_xmas_tree robots =
-  let module S = Set.Make (struct
-    type t = int * int
-
-    let compare (x, y) (x', y') =
-      match Int.compare x x' with 0 -> Int.compare y y' | n -> n
-  end) in
-  let positions = List.map fst robots in
-  let set = S.of_list positions in
-  List.length positions = S.cardinal set
-
+(* I previously made a wild guess that robots wouldn't overlap to picture a Christmas tree *)
+(* The trick was to use the quadrants we previously calculated *)
+(* If most pixels are gathered in a single quadrant, we've found our tree *)
 let find_xmas_tree w h robots =
-  let m = Hashtbl.create 8192 in
-  let rec find_cycle robots i =
-    match Hashtbl.find_opt m robots with
-    | None ->
-        Hashtbl.add m robots i;
-        find_cycle (move_robots ~width:w ~height:h ~seconds:1 robots) (i + 1)
-    | Some _ ->
-        Hashtbl.fold
-          (fun rs target acc -> if is_xmas_tree rs then target else acc)
-          m (-1)
+  let is_xmas_tree robots =
+    let q1, q2, q3, q4 = quadrants w h robots in
+    let qs = [ q1; q2; q3; q4 ] in
+    let k = List.fold_left ( + ) 0 (List.map List.length qs) in
+    List.find_opt
+      (fun q ->
+        let k' = List.length q in
+        k' > k - k')
+      qs
+    |> Option.fold ~none:false ~some:(fun _ -> true)
   in
-  find_cycle robots 0
+  let rec repeat robots i =
+    if is_xmas_tree robots then i
+    else repeat (move_robots ~width:w ~height:h ~seconds:1 robots) (i + 1)
+  in
+  repeat robots 0
 
 let part_2 = find_xmas_tree 101 103 robots
 
