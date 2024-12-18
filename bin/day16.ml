@@ -35,8 +35,6 @@ let grid =
   |> List.map (fun s -> String.to_seq s |> Array.of_seq)
   |> Array.of_list
 
-let height, width = (Array.length grid, Array.length grid.(0))
-
 let find_target target =
   Array.find_mapi
     (fun i arr ->
