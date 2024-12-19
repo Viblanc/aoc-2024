@@ -17,7 +17,8 @@
   day14
   day15
   day16
-  day17)
+  day17
+  day18)
  (names
   main
   day01
@@ -36,5 +37,6 @@
   day14
   day15
   day16
-  day17)
+  day17
+  day18)
  (libraries aoc_2024 str))
